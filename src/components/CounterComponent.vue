@@ -2,6 +2,7 @@
   <div class="centered-list">
     <h1>Counter: {{ counter }}</h1>
     <button @click="counter++">Increment</button>
+    <button @click="increment">Increment AnotherWay</button>
   </div>
 </template>
 
@@ -11,6 +12,11 @@ export default {
   data() {
     return {
       counter: 0
+    }
+  },
+  methods: {
+    increment() {
+      this.counter++;
     }
   }
 }
@@ -23,19 +29,6 @@ export default {
     background-color: bisque;
     padding: 0.5em;
     width: 320px;
-  }
-  button {
-    font-weight: bold;
-    font-size: 1.4em;
-    border-radius: 10px;
-    background-color: gold;
-    padding: 0.5em 1.5em;
-    cursor: pointer;
-  }
-
-  button:hover {
-    background-color: black;
-    color: gold;
   }
 
   div.centered-list {

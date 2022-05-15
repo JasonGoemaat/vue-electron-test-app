@@ -1,12 +1,10 @@
 'use strict'
 
-const COLOR = 'background-color: green; color: white; padding: 5px; border-size: 5px; border-radius: 5px;';
-console.log('%cbackground.js!', COLOR);
-
 import { app, protocol, BrowserWindow, ipcMain, dialog } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 import path from 'path'
+import fs from 'fs';
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
 // Scheme must be registered before the app is ready
@@ -52,16 +50,17 @@ async function createWindow() {
   // this listens for an event (message) sent via ipcRenderer.send()
   // and replies using event.reply() to send an 'event' (message) back
   ipcMain.on('open-file', (event) => {
-    const results = dialog.showOpenDialogSync(win)
-    event.reply('open-file-response', results);
+    const filePath = dialog.showOpenDialogSync(win)[0];
+    const contents = fs.readFileSync(filePath, {encoding: 'utf-8'});
+    event.reply('open-file-response', {path: filePath, contents});
   });
 
   // this is called using ipcRenderer.invoke() which returns a promise
   // that will contain our results
-  ipcMain.handle('handle:open-file', () => {
-    const results = dialog.showOpenDialogSync(win)
-    console.log('handle:open-file results:', results);
-    return results;
+  ipcMain.handle('handle-open-file', () => {
+    const filePath = dialog.showOpenDialogSync(win)[0];
+    const contents = fs.readFileSync(filePath, {encoding: 'utf-8'});
+    return {path: filePath, contents};
   });
 }
 
@@ -109,23 +108,3 @@ if (isDevelopment) {
     })
   }
 }
-
-/********** 
- * 
- */
-// const { ipcMain } = require('electron')
-
-// ipcMain.on('ping', (event, arg) => {
-//   console.log(arg)
-//   event.reply('asynchronous-reply', 'pong')
-// })
-
-ipcMain.on('asynchronous-message', (event, arg) => {
-  console.log('background.js: on(\'asynchronous-message\'): ', COLOR, arg) // prints "ping"
-  event.reply('asynchronous-reply', 'pong')
-})
-
-ipcMain.on('synchronous-message', (event, arg) => {
-  console.log('%cbackground.js: on(synchronous-message):', arg) // prints "ping"
-  event.returnValue = 'pong'
-})

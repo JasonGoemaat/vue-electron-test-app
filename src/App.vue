@@ -28,4 +28,18 @@ export default {
   color: #2c3e50;
   margin-top: 60px;
 }
+
+button {
+  border-width: 0.1em;
+  border-radius: 0.5em;
+  padding: 0.5em 1em;
+  color: white;
+  background-color: #007bff;
+}
+
+button:hover {
+  background-color: black;
+  color: white;
+  cursor: pointer;
+}
 </style>
