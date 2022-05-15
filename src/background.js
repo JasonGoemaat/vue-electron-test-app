@@ -1,6 +1,9 @@
 'use strict'
 
-import { app, protocol, BrowserWindow } from 'electron'
+const COLOR = 'background-color: green; color: white; padding: 5px; border-size: 5px; border-radius: 5px;';
+console.log('%cbackground.js!', COLOR);
+
+import { app, protocol, BrowserWindow, ipcMain, dialog } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 import path from 'path'
@@ -12,18 +15,23 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 async function createWindow() {
+  ipcMain.on('ping', (event, title) => {
+    console.log('background.js: received "ping-message"');
+    console.log('event:', event);
+    console.log('title', title);
+  });
+
   // Create the browser window.
   const win = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1920,
+    height: 1080,
     webPreferences: {
-      // preload: path.join(__dirname, 'preload.js'),
-      preload: path.join(__dirname, 'preload.js'),
-      
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
-      nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
-      contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION
+      nodeIntegration: false,
+      contextIsolation: true,
+      enableRemoteModule: false,
+      preload: path.join(__dirname, 'preload.js')
     }
   })
 
@@ -36,6 +44,25 @@ async function createWindow() {
     // Load the index.html when not in development
     win.loadURL('app://./index.html')
   }
+
+  //--------------------------------------------------------------------------------
+  // Here we listen to and respond to events from the render thread
+  //--------------------------------------------------------------------------------
+
+  // this listens for an event (message) sent via ipcRenderer.send()
+  // and replies using event.reply() to send an 'event' (message) back
+  ipcMain.on('open-file', (event) => {
+    const results = dialog.showOpenDialogSync(win)
+    event.reply('open-file-response', results);
+  });
+
+  // this is called using ipcRenderer.invoke() which returns a promise
+  // that will contain our results
+  ipcMain.handle('handle:open-file', () => {
+    const results = dialog.showOpenDialogSync(win)
+    console.log('handle:open-file results:', results);
+    return results;
+  });
 }
 
 // Quit when all windows are closed.
@@ -86,9 +113,19 @@ if (isDevelopment) {
 /********** 
  * 
  */
-let { ipcMain } = require("electron")
+// const { ipcMain } = require('electron')
 
-ipcMain.on('console', (event, arg) => {
-  console.log('backend received:', arg);
-  return 'Hello from the backend!';
-});
+// ipcMain.on('ping', (event, arg) => {
+//   console.log(arg)
+//   event.reply('asynchronous-reply', 'pong')
+// })
+
+ipcMain.on('asynchronous-message', (event, arg) => {
+  console.log('background.js: on(\'asynchronous-message\'): ', COLOR, arg) // prints "ping"
+  event.reply('asynchronous-reply', 'pong')
+})
+
+ipcMain.on('synchronous-message', (event, arg) => {
+  console.log('%cbackground.js: on(synchronous-message):', arg) // prints "ping"
+  event.returnValue = 'pong'
+})
